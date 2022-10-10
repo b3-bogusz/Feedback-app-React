@@ -1,40 +1,55 @@
 import React from "react";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import Card from "./shared/Card";
 import Button from "./shared/Button";
 import RatingSelect from "./RatingSelect";
 import FeedbackContext from "../context/FeedbackContext";
 
 function FeedbackForm() {
-  const [review, setReview] = useState("");
+  const [text, setText] = useState("");
   const [rating, setRating] = useState(10);
   const [btnDisabled, setBtnDisabled] = useState(true);
   const [message, setMessage] = useState("");
 
-  const { addFeedback } = useContext(FeedbackContext);
+  const { addFeedback, feedbackEdit, updateFeedback } =
+    useContext(FeedbackContext);
+
+  useEffect(() => {
+    if (feedbackEdit.edit === true) {
+      setBtnDisabled(false);
+      setText(feedbackEdit.item.text);
+      setRating(feedbackEdit.item.rating);
+    }
+  }, [feedbackEdit]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newFeedback = {
-      text: review,
-      rating,
-    };
-    addFeedback(newFeedback);
-    setReview("");
+    if (text.trim().length > 10) {
+      const newFeedback = {
+        text,
+        rating,
+      };
+      if (feedbackEdit.edit === true) {
+        updateFeedback(feedbackEdit.item.id, newFeedback);
+      } else {
+        addFeedback(newFeedback);
+      }
+      setText("");
+    }
   };
 
-  const handleTextChange = (e) => {
-    if (review === "") {
+  const handleTextChange = ({ target: { value } }) => {
+    if (value === "") {
       setBtnDisabled(true);
       setMessage(null);
-    } else if (review !== "" && review.trim().length <= 10) {
+    } else if (value !== "" && value.trim().length <= 10) {
       setBtnDisabled(true);
       setMessage("You review must contain at least 10 characters.");
     } else {
       setBtnDisabled(false);
       setMessage(null);
     }
-    setReview(e.target.value);
+    setText(value);
   };
 
   return (
@@ -48,7 +63,7 @@ function FeedbackForm() {
               onChange={handleTextChange}
               type="text"
               placeholder="Wrtie a review"
-              value={review}
+              value={text}
             />
             <Button type="submit" version="secondary" isDisabled={btnDisabled}>
               Send
